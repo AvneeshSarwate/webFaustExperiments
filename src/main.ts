@@ -7,13 +7,12 @@ import { instantiateFaustModuleFromFile,
 // initialize the libfaust wasm
 const faustModule = await instantiateFaustModuleFromFile("../node_modules/@grame/faustwasm/libfaust-wasm/libfaust-wasm.js");
 
-const audioContext = new AudioContext();
-
 // Get the Faust compiler
 const libFaust = new LibFaust(faustModule);
 // @ts-ignore
 window.libFaust = libFaust;
 console.log(libFaust.version());
+
 const compiler = new FaustCompiler(libFaust);
 const generator = new FaustMonoDspGenerator();
 const sampleRate = 48000;
@@ -27,9 +26,12 @@ process = os.osc(freq) * amp;
 `;
 // Compile the DSP
 await generator.compile(compiler, name, code, argv.join(" "));
+const audioContext = new AudioContext();
 
-// document.body.onclick = async () => {
 
+document.body.onclick = async () => {
+
+  audioContext.resume();
   const node = await generator.createNode(audioContext);
 
   if(node) {
@@ -72,7 +74,9 @@ await generator.compile(compiler, name, code, argv.join(" "));
       node.setParamValue('/oscillator/Amplitude', amplitude);
     });
   }
-// }
+
+  document.body.onclick = null;
+}
 
 //after page loads and you click the body, need to hit save on this file again to hot reload
 //and get web audio to properly initialize after a click
