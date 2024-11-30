@@ -15,7 +15,6 @@ console.log(libFaust.version());
 
 const compiler = new FaustCompiler(libFaust);
 const generator = new FaustMonoDspGenerator();
-const sampleRate = 48000;
 const name = "oscillator"
 const argv = ["-I", "libraries/"];
 const code = `
@@ -28,20 +27,44 @@ process = os.osc(freq) * amp;
 await generator.compile(compiler, name, code, argv.join(" "));
 const audioContext = new AudioContext();
 
+const startAudioButton = document.createElement('button');
+startAudioButton.textContent = 'Start Audio';
+document.body.appendChild(startAudioButton);
 
-document.body.onclick = async () => {
-
+startAudioButton.addEventListener('click', async () => {
   audioContext.resume();
+  document.getElementById('audioState')!.textContent = 'audio on';
+});
+
+
+const addNodeButton = document.createElement('button');
+addNodeButton.textContent = 'Add Node';
+document.body.appendChild(addNodeButton);
+
+addNodeButton.addEventListener('click', async () => {
+  addNode();
+});
+const addNode = async () => {
+
+  const startTime = performance.now();
+
   const node = await generator.createNode(audioContext);
 
   if(node) {
     node.connect(audioContext.destination);
     node.start();
 
+    const endTime = performance.now();
+    console.log(`Time to create node: ${endTime - startTime}ms`);
+
+
+    const sliderContainer = document.createElement('div');
+    document.body.appendChild(sliderContainer);
+
     // Create a slider to control the frequency
     const freqLabel = document.createElement('label');
     freqLabel.textContent = 'Frequency';
-    document.body.appendChild(freqLabel);
+    sliderContainer.appendChild(freqLabel);
     const slider = document.createElement('input');
     slider.id = 'freqSlider';
     slider.type = 'range';
@@ -49,11 +72,11 @@ document.body.onclick = async () => {
     slider.max = '2000';
     slider.value = '440';
     slider.step = '1';
-    document.body.appendChild(slider);
+    sliderContainer.appendChild(slider);
 
     const ampLabel = document.createElement('label');
     ampLabel.textContent = 'Amplitude';
-    document.body.appendChild(ampLabel);
+    sliderContainer.appendChild(ampLabel);
     const ampSlider = document.createElement('input');
     ampSlider.id = 'ampSlider';
     ampSlider.type = 'range';
@@ -61,7 +84,7 @@ document.body.onclick = async () => {
     ampSlider.max = '1';
     ampSlider.value = '0.5';
     ampSlider.step = '0.01';
-    document.body.appendChild(ampSlider);
+    sliderContainer.appendChild(ampSlider);
 
     // Update the frequency parameter when the slider value changes
     slider.addEventListener('input', (event) => {
